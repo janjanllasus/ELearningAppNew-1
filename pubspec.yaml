@@ -39,6 +39,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+    
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -62,6 +63,21 @@ flutter:
     - lib/assets/owl.png
     - lib/assets/play.png
     - lib/assets/video.png
+    - lib/assets/popularRead.png
+    - lib/assets/popularPlay.png
+    - lib/assets/puzzle.jpg
+    - lib/assets/trivia.jpg
+    - lib/assets/quiz.jpg
+    - lib/assets/spaceExplorer.jpg
+    - lib/assets/solarSystem.jpg
+    - lib/assets/animal.jpg
+    - lib/assets/spaceBook.jpg
+    - lib/assets/periodicTable.jpg
+    - lib/assets/humanBodySystems.jpg
+    - lib/assets/lifeBook.jpg
+    - lib/assets/earthAndSpace.jpg
+    - lib/assets/chemistry.jpg
+    
 
   # To add assets to your application, add an assets section, like this:
   # assets:
