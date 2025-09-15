@@ -14,18 +14,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  String selectedRole = "Student";
-  final List<String> roles = ["Parent", "Teacher", "Admin", "Student"];
-
   void _login() {
     String username = _usernameController.text.trim();
     String password = _passwordController.text;
 
     if (username.isNotEmpty && password.isNotEmpty) {
+      // 👇 Default to "Student" role since dropdown is removed
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => RoleNavigation(role: selectedRole),
+          builder: (context) => const RoleNavigation(role: "Student"),
         ),
       );
     } else {
@@ -33,12 +31,22 @@ class _LoginScreenState extends State<LoginScreen> {
         context: context,
         builder:
             (_) => AlertDialog(
-              title: const Text("Login Failed"),
-              content: const Text("Please fill all fields."),
+              backgroundColor: const Color(0xFF1C1F3E),
+              title: const Text(
+                "Login Failed",
+                style: TextStyle(color: Colors.white),
+              ),
+              content: const Text(
+                "Please fill all fields.",
+                style: TextStyle(color: Colors.white70),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(color: Colors.purpleAccent),
+                  ),
                 ),
               ],
             ),
@@ -49,62 +57,123 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            DropdownButtonFormField<String>(
-              value: selectedRole,
-              items:
-                  roles
-                      .map(
-                        (role) =>
-                            DropdownMenuItem(value: role, child: Text(role)),
-                      )
-                      .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedRole = value!;
-                });
-              },
-              decoration: const InputDecoration(labelText: "Select Role"),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(labelText: "Username"),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: "Password"),
-              obscureText: true,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(onPressed: _login, child: const Text("Login")),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ForgotPasswordScreen(),
+      backgroundColor: const Color(0xFF0D102C), // Dark background
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Owl Mascot
+              Image.asset(
+                "lib/assets/owl.png", // 👈 owl mascot image
+                height: 140,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Welcome Back!",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                "Log in to continue your learning adventure",
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+
+              // Username
+              TextField(
+                controller: _usernameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Username",
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: const Color(0xFF1C1F3E),
+                  prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              },
-              child: const Text("Forgot Password?"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SignupScreen()),
-                );
-              },
-              child: const Text("Don't have an account? Sign Up"),
-            ),
-          ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Password
+              TextField(
+                controller: _passwordController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: const Color(0xFF1C1F3E),
+                  prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 24),
+
+              // Login Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7B4DFF),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    "Login",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Forgot Password
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ForgotPasswordScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  "Forgot Password?",
+                  style: TextStyle(color: Colors.purpleAccent),
+                ),
+              ),
+
+              // Sign Up
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SignupScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  "Don't have an account? Sign Up",
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
