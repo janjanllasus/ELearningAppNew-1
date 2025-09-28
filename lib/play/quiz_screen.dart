@@ -51,79 +51,74 @@ class _QuizScreenState extends State<QuizScreen> {
     } else {
       showDialog(
         context: context,
-        builder:
-            (_) => AlertDialog(
-              backgroundColor: const Color(0xFF1C1F3E),
-              title: const Text(
-                "Quiz Finished 🎉",
-                style: TextStyle(color: Colors.white),
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF1C1F3E),
+          title: const Text(
+            "Quiz Finished 🎉",
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            "Your score: $score / ${quizQuestions.length}",
+            style: const TextStyle(fontSize: 18, color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "OK",
+                style: TextStyle(color: Colors.deepPurpleAccent),
               ),
-              content: Text(
-                "Your score: $score / ${quizQuestions.length}",
-                style: const TextStyle(fontSize: 18, color: Colors.white70),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "OK",
-                    style: TextStyle(color: Colors.deepPurpleAccent),
-                  ),
-                ),
-              ],
             ),
+          ],
+        ),
       );
     }
   }
 
   void editQuestion(int index) {
     if (widget.role == "teacher" || widget.role == "admin") {
-      TextEditingController questionController = TextEditingController(
-        text: quizQuestions[index]["question"],
-      );
-      TextEditingController answerController = TextEditingController(
-        text: quizQuestions[index]["answer"],
-      );
+      TextEditingController questionController =
+          TextEditingController(text: quizQuestions[index]["question"]);
+      TextEditingController answerController =
+          TextEditingController(text: quizQuestions[index]["answer"]);
 
       showDialog(
         context: context,
-        builder:
-            (_) => AlertDialog(
-              backgroundColor: const Color(0xFF1C1F3E),
-              title: const Text(
-                "Edit Question",
-                style: TextStyle(color: Colors.white),
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF1C1F3E),
+          title: const Text(
+            "Edit Question",
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: questionController,
+                style: const TextStyle(color: Colors.white),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: questionController,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  TextField(
-                    controller: answerController,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ],
+              TextField(
+                controller: answerController,
+                style: const TextStyle(color: Colors.white),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      quizQuestions[index]["question"] =
-                          questionController.text;
-                      quizQuestions[index]["answer"] = answerController.text;
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Save",
-                    style: TextStyle(color: Colors.deepPurpleAccent),
-                  ),
-                ),
-              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  quizQuestions[index]["question"] = questionController.text;
+                  quizQuestions[index]["answer"] = answerController.text;
+                });
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "Save",
+                style: TextStyle(color: Colors.deepPurpleAccent),
+              ),
             ),
+          ],
+        ),
       );
     }
   }
@@ -133,105 +128,130 @@ class _QuizScreenState extends State<QuizScreen> {
     var question = quizQuestions[currentQuestionIndex];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D102C), // dark blue background
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF7B4DFF), // purple achievement theme
-        title: const Text(
-          "Science Quiz 🧪",
-          style: TextStyle(color: Colors.white),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0D102C), Color(0xFF2A1B4A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-        actions: [
-          if (widget.role == "teacher" || widget.role == "admin")
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.white),
-              onPressed: () => editQuestion(currentQuestionIndex),
-            ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Owl mascot
-            Center(
-              child: Column(
-                children: [
-                  Image.asset(
-                    "lib/assets/owl.png", // 🦉 owl mascot
-                    height: 100,
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Professor Owl says:",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white70,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                // Top Owl Mascot with Speech Bubble
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset("lib/assets/owl.png", height: 90),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurpleAccent.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          "Hello, I’m Professor Owl! 🦉\nLet’s see what you know!",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Question Card
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              color: const Color(0xFF1C1F3E), // card theme
-              elevation: 5,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  question["question"],
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
+                  ],
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 30),
+                const SizedBox(height: 30),
 
-            // Options
-            ...question["options"].map<Widget>((opt) {
-              return Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7B4DFF), // purple button
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                // Question Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1C1F3E),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.deepPurpleAccent.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      )
+                    ],
                   ),
-                  onPressed: () => checkAnswer(opt),
                   child: Text(
-                    opt,
-                    style: const TextStyle(fontSize: 18, color: Colors.white),
+                    question["question"],
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              );
-            }).toList(),
 
-            const Spacer(),
+                const SizedBox(height: 25),
 
-            // Progress
-            Text(
-              "Question ${currentQuestionIndex + 1} of ${quizQuestions.length}",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white70,
-              ),
+                // Options
+                ...question["options"].map<Widget>((opt) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurpleAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 5,
+                      ),
+                      onPressed: () => checkAnswer(opt),
+                      child: Text(
+                        opt,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+
+                const Spacer(),
+
+                // Progress Bar
+                Column(
+                  children: [
+                    LinearProgressIndicator(
+                      value: (currentQuestionIndex + 1) /
+                          quizQuestions.length,
+                      backgroundColor: Colors.white24,
+                      color: Colors.deepPurpleAccent,
+                      minHeight: 10,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Question ${currentQuestionIndex + 1} of ${quizQuestions.length}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                )
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

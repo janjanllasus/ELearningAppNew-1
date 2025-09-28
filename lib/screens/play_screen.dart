@@ -145,7 +145,7 @@ class PlayScreen extends StatelessWidget {
                 ),
                 _gameCard(
                   context,
-                  "Trivia",
+                  "Matching Game",
                   "lib/assets/trivia.jpg",
                   TriviaScreen(role: role),
                 ),

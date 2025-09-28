@@ -12,7 +12,8 @@ class AnalyticsScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: const Color(0xFF7B4DFF),
           elevation: 0,
-          title: const Text("My Honor", style: TextStyle(color: Colors.white)),
+          title: const Text("My Honor",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -22,7 +23,7 @@ class AnalyticsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(12.0),
               child: CircleAvatar(
                 backgroundColor: Colors.orangeAccent,
-                child: const Icon(Icons.play_arrow, color: Colors.white),
+                child: const Icon(Icons.person, color: Colors.white),
               ),
             ),
           ],
@@ -42,12 +43,7 @@ class AnalyticsScreen extends StatelessWidget {
             BadgeCategory(
               categoryName: "Puzzle",
               badges: [
-                BadgeData(
-                  "Logic Master",
-                  "Star",
-                  "Completed",
-                  Colors.deepPurple,
-                ),
+                BadgeData("Logic Master", "Star", "Completed", Colors.deepPurple),
                 BadgeData("Element Master", "Junior", "70%", Colors.indigo),
               ],
             ),
@@ -89,96 +85,159 @@ class BadgeCategory extends StatelessWidget {
     required this.badges,
   });
 
+  IconData getLevelIcon(String level) {
+    switch (level) {
+      case "Junior":
+        return Icons.emoji_events; 
+      case "Senior":
+        return Icons.military_tech; 
+      case "Star":
+        return Icons.star; 
+      default:
+        return Icons.lock; 
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(12.0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Achievements",
-              style: TextStyle(fontSize: 18, color: Colors.white),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth < 360 ? 1 : 2;
+    final itemWidth = (screenWidth - 24 - (crossAxisCount - 1) * 12) / crossAxisCount;
+    final itemHeight = 180.0;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0D102C), Color(0xFF1C1F3E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "$categoryName Achievements",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  height: 3,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.purpleAccent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        Expanded(
-          child: GridView.count(
-            crossAxisCount: 2,
-            childAspectRatio: 0.95,
-            padding: const EdgeInsets.all(10),
-            children:
-                badges
-                    .map(
-                      (badge) => badgeCard(
-                        badge.title,
-                        badge.level,
-                        badge.status,
-                        badge.color,
-                      ),
-                    )
-                    .toList(),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: itemWidth / itemHeight,
+              padding: const EdgeInsets.all(12),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              children: badges.map((badge) => badgeCard(badge)).toList(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget badgeCard(
-    String title,
-    String level,
-    String status,
-    Color badgeColor,
-  ) {
-    bool isCompleted = status == "Completed";
-    bool isNotReached = status == "0%";
+  Widget badgeCard(BadgeData badge) {
+    bool isCompleted = badge.status == "Completed";
+    bool isNotReached = badge.status == "0%";
 
     return Card(
-      color: const Color(0xFF1C1F3E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              badge.color.withOpacity(0.85),
+              badge.color.withOpacity(0.5),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black45,
+              blurRadius: 8,
+              offset: const Offset(2, 4),
+            )
+          ],
+        ),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Icon(Icons.emoji_events, color: badgeColor, size: 40),
+            AnimatedScale(
+              scale: isCompleted ? 1.2 : 1.0,
+              duration: const Duration(milliseconds: 400),
+              child: Icon(getLevelIcon(badge.level), color: Colors.white, size: 45),
+            ),
             const SizedBox(height: 10),
             Text(
-              title,
+              badge.title,
               style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                  color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: badgeColor,
+                color: Colors.black45,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                level,
+                badge.level,
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
             const Spacer(),
-            isCompleted
-                ? const Text("Completed", style: TextStyle(color: Colors.green))
-                : isNotReached
-                ? const Text("Not Reach", style: TextStyle(color: Colors.red))
-                : Column(
-                  children: [
-                    const Text("Next", style: TextStyle(color: Colors.white70)),
-                    const SizedBox(height: 4),
-                    LinearProgressIndicator(
-                      value: double.tryParse(status.replaceAll('%', ''))! / 100,
+            if (isCompleted)
+              const Text("🏆 Completed",
+                  style: TextStyle(color: Colors.yellow, fontSize: 14))
+            else if (isNotReached)
+              const Text("🔒 Locked",
+                  style: TextStyle(color: Colors.redAccent, fontSize: 14))
+            else
+              Column(
+                children: [
+                  const Text("In Progress",
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(
+                        begin: 0,
+                        end: double.tryParse(badge.status.replaceAll('%', ''))! / 100),
+                    duration: const Duration(seconds: 1),
+                    builder: (context, value, _) => LinearProgressIndicator(
+                      value: value,
                       backgroundColor: Colors.white12,
-                      valueColor: AlwaysStoppedAnimation<Color>(badgeColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(badge.status,
+                      style: const TextStyle(color: Colors.white, fontSize: 12)),
+                ],
+              ),
           ],
         ),
       ),

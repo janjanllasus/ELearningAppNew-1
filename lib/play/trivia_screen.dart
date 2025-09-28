@@ -1,219 +1,241 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 class TriviaScreen extends StatefulWidget {
   final String role;
-  const TriviaScreen({Key? key, required this.role}) : super(key: key);
+  const TriviaScreen({super.key, required this.role});
 
   @override
   State<TriviaScreen> createState() => _TriviaScreenState();
 }
 
 class _TriviaScreenState extends State<TriviaScreen> {
-  List<Map<String, String>> triviaFacts = [
-    {
-      "question": "True or False: Your heart is about the size of your fist.",
-      "answer": "True",
-    },
-    {
-      "question": "True or False: The brain has no pain receptors.",
-      "answer": "True",
-    },
-    {
-      "question": "True or False: Humans have 300 bones at birth.",
-      "answer": "True",
-    },
-    {
-      "question":
-          "True or False: The smallest bone in the human body is in the ear.",
-      "answer": "True",
-    },
-    {
-      "question":
-          "True or False: The lungs are the heaviest organ in the human body.",
-      "answer": "False",
-    },
+  // Maximum 10 levels
+  int currentLevel = 1;
+  int score = 0;
+  int? firstIndex;
+
+  // Cards data for each level
+  final List<List<Map<String, String>>> levels = [
+    // Level 1
+    [
+      {"term": "Photosynthesis", "definition": "Process by which plants make food"},
+      {"term": "Evaporation", "definition": "Liquid turning into gas"}
+    ],
+    // Level 2
+    [
+      {"term": "Oxygen", "definition": "Gas humans need to breathe"},
+      {"term": "Gravity", "definition": "Force that pulls objects down"}
+    ],
+    // Level 3
+    [
+      {"term": "Magnetism", "definition": "Force that attracts metals"},
+      {"term": "Condensation", "definition": "Gas turning into liquid"}
+    ],
+    // Level 4
+    [
+      {"term": "Solar System", "definition": "Planets orbiting the Sun"},
+      {"term": "Evaporation", "definition": "Liquid turning into gas"}
+    ],
+    // Level 5
+    [
+      {"term": "Plant Cell", "definition": "Cell of a plant"},
+      {"term": "Animal Cell", "definition": "Cell of an animal"}
+    ],
+    // Level 6
+    [
+      {"term": "Inertia", "definition": "Object stays at rest or motion"},
+      {"term": "Friction", "definition": "Resistance when surfaces move"}
+    ],
+    // Level 7
+    [
+      {"term": "Photosynthesis", "definition": "Process by which plants make food"},
+      {"term": "Respiration", "definition": "Process of releasing energy"}
+    ],
+    // Level 8
+    [
+      {"term": "Acid", "definition": "Substance with pH<7"},
+      {"term": "Base", "definition": "Substance with pH>7"}
+    ],
+    // Level 9
+    [
+      {"term": "Evaporation", "definition": "Liquid turning into gas"},
+      {"term": "Precipitation", "definition": "Water falling from clouds"}
+    ],
+    // Level 10
+    [
+      {"term": "Force", "definition": "Push or pull on an object"},
+      {"term": "Energy", "definition": "Ability to do work"}
+    ],
   ];
 
-  int currentFactIndex = 0;
-  int score = 0;
+  List<String> _cards = [];
+  List<bool> _flipped = [];
 
-  void checkAnswer(String selected) {
-    if (selected == triviaFacts[currentFactIndex]["answer"]) {
-      score++;
+  @override
+  void initState() {
+    super.initState();
+    _prepareCards();
+  }
+
+  void _prepareCards() {
+    final pairs = levels[currentLevel - 1];
+    _cards = [];
+    for (var pair in pairs) {
+      _cards.add(pair['term']!);
+      _cards.add(pair['definition']!);
     }
+    _cards.shuffle(Random());
+    _flipped = List<bool>.filled(_cards.length, false);
+    firstIndex = null;
+  }
 
-    if (currentFactIndex < triviaFacts.length - 1) {
-      setState(() {
-        currentFactIndex++;
-      });
+  void _flipCard(int index) {
+    setState(() {
+      _flipped[index] = true;
+    });
+
+    if (firstIndex == null) {
+      firstIndex = index;
     } else {
-      // End of quiz
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              backgroundColor: const Color(0xFF1C1F3E),
-              title: const Text(
-                "Trivia Finished",
-                style: TextStyle(color: Colors.white),
-              ),
-              content: Text(
-                "Your score: $score / ${triviaFacts.length}",
-                style: const TextStyle(color: Colors.white70),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "OK",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-      );
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (_isMatch(firstIndex!, index)) {
+          score += 10;
+          _showMessage("✅ Match found! +10 points", Colors.green);
+        } else {
+          _flipped[firstIndex!] = false;
+          _flipped[index] = false;
+          _showMessage("❌ Not a match", Colors.redAccent);
+        }
+        firstIndex = null;
+
+        // Check if level completed
+        if (_flipped.every((f) => f)) {
+          if (currentLevel < 10) {
+            currentLevel++;
+            _showMessage("🎉 Level $currentLevel!", Colors.blueAccent);
+            _prepareCards();
+          } else {
+            _showMessage("🏆 You completed all levels!", Colors.purpleAccent);
+          }
+        }
+
+        setState(() {});
+      });
     }
   }
 
-  void editFact(int index) {
-    if (widget.role == "teacher" || widget.role == "admin") {
-      TextEditingController questionController = TextEditingController(
-        text: triviaFacts[index]["question"],
-      );
-      TextEditingController answerController = TextEditingController(
-        text: triviaFacts[index]["answer"],
-      );
+  bool _isMatch(int a, int b) {
+    String cardA = _cards[a];
+    String cardB = _cards[b];
 
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              backgroundColor: const Color(0xFF1C1F3E),
-              title: const Text(
-                "Edit Fact",
-                style: TextStyle(color: Colors.white),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: questionController,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  TextField(
-                    controller: answerController,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      triviaFacts[index]["question"] = questionController.text;
-                      triviaFacts[index]["answer"] = answerController.text;
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Save",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-      );
+    for (var pair in levels[currentLevel - 1]) {
+      if ((pair['term'] == cardA && pair['definition'] == cardB) ||
+          (pair['term'] == cardB && pair['definition'] == cardA)) {
+        return true;
+      }
     }
+    return false;
+  }
+
+  void _showMessage(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: color,
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    var fact = triviaFacts[currentFactIndex];
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0D102C), // Achievement dark theme
+      backgroundColor: const Color(0xFF1E1F3E),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF7B4DFF), // Purple theme
-        title: const Text("Trivia Game", style: TextStyle(color: Colors.white)),
-        actions: [
-          if (widget.role == "teacher" || widget.role == "admin")
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.white),
-              onPressed: () => editFact(currentFactIndex),
-            ),
-        ],
+        backgroundColor: const Color(0xFF7B4DFF),
+        title: Text("Matching Game - ${widget.role}",
+            style: const TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // 🦉 Science Owl Mascot
-            SizedBox(height: 120, child: Image.asset("lib/assets/owl.png")),
-            const SizedBox(height: 20),
-
-            // Trivia Question Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1C1F3E),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 6,
-                    offset: const Offset(2, 4),
+      body: Column(
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            "Level: $currentLevel / 10 | Score: $score",
+            style: const TextStyle(
+                color: Colors.greenAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 18),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _cards.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12),
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: _flipped[index] ? null : () => _flipCard(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    decoration: BoxDecoration(
+                      color: _flipped[index]
+                          ? Colors.greenAccent
+                          : const Color(0xFF2C2F5E),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white24, width: 2),
+                      boxShadow: _flipped[index]
+                          ? [
+                              const BoxShadow(
+                                  color: Colors.white24,
+                                  blurRadius: 6,
+                                  offset: Offset(2, 2))
+                            ]
+                          : [],
+                    ),
+                    alignment: Alignment.center,
+                    child: _flipped[index]
+                        ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              _cards[index],
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        : const Icon(Icons.help_outline,
+                            color: Colors.white, size: 40),
                   ),
-                ],
-              ),
-              child: Text(
-                fact["question"]!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+                );
+              },
             ),
-            const SizedBox(height: 40),
-
-            // True Button
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B4DFF),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 32,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () => checkAnswer("True"),
-              child: const Text("True", style: TextStyle(fontSize: 18)),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                score = 0;
+                currentLevel = 1;
+                _prepareCards();
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purpleAccent,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
             ),
-            const SizedBox(height: 20),
-
-            // False Button
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 32,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () => checkAnswer("False"),
-              child: const Text("False", style: TextStyle(fontSize: 18)),
-            ),
-          ],
-        ),
+            child: const Text("Restart Game",
+                style: TextStyle(color: Colors.white, fontSize: 16)),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
