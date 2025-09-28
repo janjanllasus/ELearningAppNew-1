@@ -70,52 +70,51 @@ class _GameFlowState extends State<GameFlow> {
         duration: const Duration(milliseconds: 400),
         child: switch (stage) {
           AstronomyStage.intro => _Intro(
-            onContinue: () => _startMeteorStage(1),
-          ),
+              onContinue: () => _startMeteorStage(1),
+            ),
           AstronomyStage.meteor => MeteorDodge(
-            key: ValueKey("meteor$level"), // 👈 FIXED (removed lives from key)
-            level: level,
-            lives: lives,
-            hasShield: hasShield,
-            onShieldUsed: _useShield,
-            onLifeLost: _loseLife,
-            onStageClear: _stageClear,
-            onQuiz: (onDone) {
-              final quiz = quizPool[Random().nextInt(quizPool.length)];
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  fullscreenDialog: true,
-                  builder:
-                      (_) => QuizScreen(
-                        question: quiz["q"]!,
-                        options: quiz["opts"]!,
-                        correctAnswer: quiz["ans"]!,
-                        onCorrect: () {
-                          _gainShield();
-                          onDone();
-                        },
-                        onWrong: onDone,
-                      ),
-                ),
-              );
-            },
-          ),
+              key: ValueKey("meteor$level"),
+              level: level,
+              lives: lives,
+              hasShield: hasShield,
+              onShieldUsed: _useShield,
+              onLifeLost: _loseLife,
+              onStageClear: _stageClear,
+              onQuiz: (onDone) {
+                final quiz = quizPool[Random().nextInt(quizPool.length)];
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    fullscreenDialog: true,
+                    builder: (_) => QuizScreen(
+                      question: quiz["q"]!,
+                      options: quiz["opts"]!,
+                      correctAnswer: quiz["ans"]!,
+                      onCorrect: () {
+                        _gainShield();
+                        onDone();
+                      },
+                      onWrong: onDone,
+                    ),
+                  ),
+                );
+              },
+            ),
           AstronomyStage.stageClear => StageClearScreen(
-            level: level,
-            onNext: _nextLevel,
-          ),
+              level: level,
+              onNext: _nextLevel,
+            ),
           AstronomyStage.complete => _Complete(
-            lives: lives,
-            onExit: () => Navigator.pop(context),
-            onPlayAgain: () {
-              setState(() {
-                stage = AstronomyStage.intro;
-                hasShield = false;
-                lives = 3;
-                level = 1;
-              });
-            },
-          ),
+              lives: lives,
+              onExit: () => Navigator.pop(context),
+              onPlayAgain: () {
+                setState(() {
+                  stage = AstronomyStage.intro;
+                  hasShield = false;
+                  lives = 3;
+                  level = 1;
+                });
+              },
+            ),
         },
       ),
     );
@@ -185,6 +184,10 @@ class MeteorDodge extends StatefulWidget {
 
 class _MeteorDodgeState extends State<MeteorDodge> {
   double rocketX = 0;
+  final double rocketSize = 60;
+  final double meteorSize = 40;
+  final double powerUpSize = 35;
+
   List<Meteor> meteors = [];
   List<PowerUp> powerUps = [];
   Timer? gameLoop;
@@ -192,88 +195,136 @@ class _MeteorDodgeState extends State<MeteorDodge> {
   int timeLeft = 60;
   bool paused = false;
 
+  bool localHasShield = false;
+  int lastSeenLives = 0;
+
+  // Difficulty scaling
+  double meteorSpeed = 0.02;
+  double powerUpSpeed = 0.015;
+  int stageTime = 60;
+
   @override
   void initState() {
     super.initState();
+    localHasShield = widget.hasShield;
+    lastSeenLives = widget.lives;
+
+    // Scale difficulty by level
+    meteorSpeed += 0.01 * (widget.level - 1);
+    powerUpSpeed += 0.005 * (widget.level - 1);
+    stageTime = (60 - (widget.level - 1) * 10).clamp(30, 60);
+    timeLeft = stageTime;
+
     _startGame();
+  }
+
+  @override
+  void didUpdateWidget(covariant MeteorDodge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hasShield != widget.hasShield) {
+      setState(() => localHasShield = widget.hasShield);
+    }
+    if (oldWidget.lives != widget.lives) {
+      lastSeenLives = widget.lives;
+      if (widget.lives <= 0) {
+        gameLoop?.cancel();
+        timer?.cancel();
+      }
+    }
   }
 
   void _startGame() {
     meteors.clear();
     powerUps.clear();
-    timeLeft = 60;
     paused = false;
 
     gameLoop = Timer.periodic(const Duration(milliseconds: 50), (timer) {
       if (paused) return;
       setState(() {
-        // Move meteors
         for (var meteor in meteors) {
-          meteor.y += 0.02;
+          meteor.y += meteorSpeed;
         }
         meteors.removeWhere((m) => m.y > 1.2);
 
-        // Move powerups
         for (var p in powerUps) {
-          p.y += 0.015;
+          p.y += powerUpSpeed;
         }
         powerUps.removeWhere((p) => p.y > 1.2);
 
         // Meteor collisions
         for (var meteor in List<Meteor>.from(meteors)) {
-          if ((meteor.x - rocketX).abs() < 0.15 && meteor.y > 0.8) {
-            if (widget.hasShield) {
+          if (_checkCollision(meteor.x, meteor.y, meteorSize)) {
+            if (localHasShield) {
               widget.onShieldUsed();
+              localHasShield = false;
               meteors.remove(meteor);
-              break;
             } else {
               meteors.remove(meteor);
               _hit();
-              break;
             }
+            break;
           }
         }
 
         // Powerup collection
         for (var p in List<PowerUp>.from(powerUps)) {
-          if ((p.x - rocketX).abs() < 0.15 && p.y > 0.8) {
+          if (_checkCollision(p.x, p.y, powerUpSize)) {
             powerUps.remove(p);
             paused = true;
-            widget.onQuiz(() {
-              setState(() => paused = false);
-            });
+            widget.onQuiz(() => setState(() => paused = false));
             break;
           }
         }
 
-        // Random spawns
-        if (Random().nextDouble() < 0.05 * widget.level) {
+        // Random spawns (increase rate by level)
+        final rand = Random().nextDouble();
+        if (rand < 0.05 * widget.level + 0.01) {
           meteors.add(Meteor(Random().nextDouble() * 2 - 1, -1));
         }
-        if (Random().nextDouble() < 0.01) {
+        if (Random().nextDouble() < 0.01 + (0.002 * widget.level)) {
           powerUps.add(PowerUp(Random().nextDouble() * 2 - 1, -1));
         }
       });
     });
 
-    // Timer countdown
     timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (paused) return;
       setState(() {
         timeLeft--;
-        if (timeLeft <= 0) {
-          _win();
-        }
+        if (timeLeft <= 0) _win();
       });
     });
   }
 
+  bool _checkCollision(double objX, double objY, double objSize) {
+    final rocketRect = Rect.fromCenter(
+      center: Offset(
+        (rocketX + 1) / 2 * MediaQuery.of(context).size.width,
+        MediaQuery.of(context).size.height - 100,
+      ),
+      width: rocketSize,
+      height: rocketSize,
+    );
+
+    final objRect = Rect.fromCenter(
+      center: Offset(
+        (objX + 1) / 2 * MediaQuery.of(context).size.width,
+        objY * MediaQuery.of(context).size.height,
+      ),
+      width: objSize,
+      height: objSize,
+    );
+
+    return rocketRect.overlaps(objRect);
+  }
+
   void _hit() {
     widget.onLifeLost();
-    if (widget.lives <= 1) {
+    if (lastSeenLives <= 1 || widget.lives <= 1) {
       gameLoop?.cancel();
       timer?.cancel();
     }
+    lastSeenLives = max(0, lastSeenLives - 1);
   }
 
   void _win() {
@@ -302,48 +353,46 @@ class _MeteorDodgeState extends State<MeteorDodge> {
         _moveRocket(details.delta.dx / MediaQuery.of(context).size.width * 2);
       },
       child: Container(
-        color: Colors.black,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0D102C), Color(0xFF1B1F54)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: Stack(
           children: [
             // Meteors
             ...meteors.map(
               (m) => Positioned(
-                left: (m.x + 1) / 2 * MediaQuery.of(context).size.width - 15,
+                left: (m.x + 1) / 2 * MediaQuery.of(context).size.width - meteorSize / 2,
                 top: m.y * MediaQuery.of(context).size.height,
-                child: const Icon(Icons.circle, color: Colors.red, size: 30),
+                child: Icon(Icons.brightness_1, color: Colors.red.shade400, size: meteorSize),
               ),
             ),
 
             // PowerUps
             ...powerUps.map(
               (p) => Positioned(
-                left: (p.x + 1) / 2 * MediaQuery.of(context).size.width - 15,
+                left: (p.x + 1) / 2 * MediaQuery.of(context).size.width - powerUpSize / 2,
                 top: p.y * MediaQuery.of(context).size.height,
-                child: const Icon(
-                  Icons.bubble_chart,
-                  color: Colors.green,
-                  size: 30,
-                ),
+                child: Icon(Icons.star, color: Colors.greenAccent.shade400, size: powerUpSize),
               ),
             ),
 
             // Rocket
             Positioned(
               bottom: 50,
-              left: (rocketX + 1) / 2 * MediaQuery.of(context).size.width - 25,
-              child: const Icon(
-                Icons.rocket_launch,
-                color: Colors.orangeAccent,
-                size: 50,
-              ),
+              left: (rocketX + 1) / 2 * MediaQuery.of(context).size.width - rocketSize / 2,
+              child: Icon(Icons.rocket_launch, color: Colors.orangeAccent.shade200, size: rocketSize),
             ),
 
             // Shield indicator
-            if (widget.hasShield)
+            if (localHasShield)
               const Positioned(
                 top: 40,
                 right: 20,
-                child: Icon(Icons.shield, color: Colors.lightBlue, size: 40),
+                child: Icon(Icons.shield, color: Colors.lightBlueAccent, size: 40),
               ),
 
             // Lives
@@ -353,8 +402,7 @@ class _MeteorDodgeState extends State<MeteorDodge> {
               child: Row(
                 children: List.generate(
                   widget.lives,
-                  (i) =>
-                      const Icon(Icons.favorite, color: Colors.pink, size: 30),
+                  (i) => const Icon(Icons.favorite, color: Colors.pinkAccent, size: 30),
                 ),
               ),
             ),
@@ -363,12 +411,19 @@ class _MeteorDodgeState extends State<MeteorDodge> {
             Positioned(
               top: 40,
               left: MediaQuery.of(context).size.width / 2 - 30,
-              child: Text(
-                "$timeLeft s",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "$timeLeft s",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -436,16 +491,12 @@ class QuizScreen extends StatelessWidget {
                     onPressed: () {
                       if (opt == correctAnswer) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("✅ Correct! Shield earned"),
-                          ),
+                          const SnackBar(content: Text("✅ Correct! Shield earned")),
                         );
                         onCorrect();
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("❌ Wrong! No shield earned"),
-                          ),
+                          const SnackBar(content: Text("❌ Wrong! No shield earned")),
                         );
                         onWrong();
                       }
@@ -454,10 +505,7 @@ class QuizScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
                     child: Text(opt),
                   ),

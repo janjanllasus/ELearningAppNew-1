@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Import your game levels
 import 'package:elearningapp_flutter/game/biologyForest.dart';
 import 'package:elearningapp_flutter/game/skyRealm.dart';
+import 'package:elearningapp_flutter/game/adventureGame.dart';
 // TODO: Create chemistryCaves.dart and import here
 // import 'package:elearningapp_flutter/game/chemistryCaves.dart';
 
@@ -53,18 +54,23 @@ class AdventureScreen extends StatelessWidget {
                       );
                     },
                   ),
-                  _AdventureTile(
-                    title: "⚗️ Chemistry Caves",
-                    subtitle: "Mix elements & balance reactions",
-                    onTap: () {
-                      // TODO: Replace with ChemistryCavesLevel when ready
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Chemistry Caves is coming soon!"),
-                        ),
-                      );
-                    },
-                  ),
+                 
+
+
+_AdventureTile(
+  title: "🌿 Biome Builder",
+  subtitle: "Restore life across diverse biomes",
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BiomeBuilderGame(role: role), // Pass the role!
+      ),
+    );
+  },
+),
+
+
                   _AdventureTile(
                     title: "🔭 Astronomy Sky Realm",
                     subtitle: "Map constellations and dodge meteors",
